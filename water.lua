@@ -1,12 +1,15 @@
 local water = {}
 
 function water.load()
-    water.x, water.y = 0, 400
+    water.level = 360
+    water.x, water.y = 0, water.level
+    water.t = 0
     water.spr = love.graphics.newImage('water.png')
 end
 
 function water.update(dt)
-    water.y = water.y + dt*10
+    water.t = water.t + dt
+    water.y = water.level + 10*math.sin(water.t)
 end
 
 function water.draw()
