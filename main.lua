@@ -10,30 +10,35 @@ function love.load()
 	water.load()
 	bg = love.graphics.newImage('bg.png')
 
-	-- float hsy = love_ScreenSize.y/2.0;
-	-- vec4 s = transform_projection * vec4(0.0, surface/love_ScreenSize.y, 0.0, 1.0);
-	-- float water = (hsy-s.y)/hsy*2.0;
-
+	canvas = love.graphics.newCanvas();
     shader = love.graphics.newShader([[
-		#ifdef VERTEX
 		extern float surface;
-		varying float height;
+		//extern float time;
+		varying vec2 hs;
+		varying float altitude;
+		uniform float cutoff = 300.0;
+		#ifdef VERTEX
         vec4 position(mat4 transform_projection, vec4 vertex_position) {
 			vec4 pos = transform_projection * vertex_position;
-			float hsy = love_ScreenSize.y/2.0;
-			float s = (hsy-surface)/hsy;
-			vec4 water = vec4(0.0, s, 0.0, s);
-			height = pos.y - water.y;
-			pos.y = water.y - height;
+			hs = love_ScreenSize.xy/2.0;
+			vec4 s = (hs.y-surface)*2.0/hs.y*vec4(0.0, 1.0, 0.0, 1.0);
+			s = transform_projection * s;
+			pos.y = s.y-pos.y;
+			altitude = -pos.y*hs.y;
             return pos;
         }
 		#endif
 		#ifdef PIXEL
-		varying float height;
         vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
+			//vec2 uv = texture_coords;
+			//vec2 offset = vec2(cos(time*3.0+200.0*uv.y), 0.0)*10.0*uv.y/hs;
+
+			//vec4 pixel = Texel(texture, vec2(uv.x+offset.x, uv.y+offset.y));
+			//pixel.a *= 0.7*(1.0 - height);
 			vec4 pixel = Texel(texture, texture_coords);
-			pixel.a *= 0.7*(1.0 - height);
-            return pixel * color;
+			pixel.a *= 1.0-altitude/cutoff;
+			pixel.rgb *= vec3(0.6, 0.8, 1.0);
+			return pixel * color;
         }
 		#endif
     ]])
@@ -48,7 +53,7 @@ function love.update(dt)
 	box.update(dt)
 	water.update(dt)
 	shader:send('surface', water.y);
-
+	-- shader:send('time', os.clock()*10);
 	-- local cx, cy = cam:pos()
     -- local dx, dy = box.x+32 - cx, box.y-32 - cy
     -- dx, dy = dx/10, dy/10
@@ -56,22 +61,23 @@ function love.update(dt)
 	cam:lookAt(box.x, box.y)
 end
 
-function drawWater()
-	love.graphics.setColor(255, 255, 255, 80)
-	water.draw()
-	love.graphics.setColor(255, 255, 255, 255)
-end
-
 function drawAll()
 	love.graphics.draw(bg, 0, 0, 0, 2, 2)
 	box.draw()
-	drawWater()
-	love.graphics.setStencil(drawWater)
-	love.graphics.setShader(shader)
+
+	-- draw reflection
+	love.graphics.setCanvas(canvas)
+	canvas:clear()
+	love.graphics.setStencil(water.stencil)
 	love.graphics.draw(bg, 0, 0, 0, 2, 2)
 	box.draw()
-	love.graphics.setShader()
 	love.graphics.setStencil()
+	love.graphics.setCanvas()
+	-- render reflection
+	love.graphics.setShader(shader)
+	love.graphics.draw(canvas);
+	love.graphics.setShader()
+
 	-- for i=1, 8 do
 	-- 	love.graphics.line(0, 100*i, love.graphics.getWidth(), 100*i)
 	-- end
