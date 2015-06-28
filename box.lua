@@ -2,7 +2,7 @@ local box = {}
 
 function box.load()
     box.x, box.y = 0, 0
-    box.spr = love.graphics.newImage('box.png')
+    box.spr = love.graphics.newImage('sushi.png')
 end
 
 function box.update(dt)
