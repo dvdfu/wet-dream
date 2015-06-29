@@ -1,4 +1,4 @@
-water = require 'water'
+Water = require 'water'
 box = require 'box'
 Camera = require 'camera'
 
@@ -7,7 +7,8 @@ love.graphics.setBackgroundColor(100, 100, 100, 255)
 
 function love.load()
 	box.load()
-	water.load()
+	water = Water.new(0, 400, 800, 300)
+	water2 = Water.new(200, 100, 400, 300)
 	bg = love.graphics.newImage('bg.png')
 	cam = Camera:new()
 	cam:lookAt(box.x, box.y)
@@ -18,7 +19,8 @@ function love.update(dt)
 		love.event.push('quit')
 	end
 	box.update(dt)
-	water.update(dt)
+	water:update(dt)
+	water2:update(dt)
 	-- local cx, cy = cam:pos()
     -- local dx, dy = box.x+32 - cx, box.y-32 - cy
     -- dx, dy = dx/10, dy/10
@@ -35,7 +37,8 @@ end
 
 function drawAll()
 	drawWorld()
-	water.draw(drawWorld)
+	water2:draw(drawWorld)
+	water:draw(drawWorld)
 end
 
 function love.draw()

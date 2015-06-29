@@ -1,16 +1,20 @@
 local water = {}
+water.__index = water
 
-function water.load()
-    water.level = 400
-    water.x, water.y = 200, water.level
-    water.w, water.h = 400, 200--love.graphics.getWidth(), love.graphics.getHeight()
+function water.new(x,y,w,h)
+    local self = {}
+    setmetatable(self, water)
+    self.level = y
+    self.x, self.y = x, self.level
+    self.w, self.h = w, h--love.graphics.getWidth(), love.graphics.getHeight()
 
-    reflection = love.graphics.newCanvas(water.w, water.h);
-    shader = love.graphics.newShader([[
+    self.reflection = love.graphics.newCanvas(self.w, self.h);
+    self.shader = love.graphics.newShader([[
 		extern float time;
+        extern vec2 size;
 		varying vec2 hs;
-		varying float altitude;
-		uniform float cutoff = 300.0;
+        uniform Image displacement;
+        uniform vec3 tint = vec3(0.5, 0.7, 0.9);
 
 		#ifdef VERTEX
         vec4 position(mat4 transform_projection, vec4 vertex_position) {
@@ -21,50 +25,60 @@ function water.load()
 		#endif
 
 		#ifdef PIXEL
-        vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
-			vec2 uv = texture_coords;
-            float offset = 4.0*cos(4.0*time+80.0*uv.y)*uv.y/hs.y;
-            vec4 pixel = Texel(texture, vec2(uv.x+offset, 1.0-uv.y));
-			pixel.a *= 0.9*(1.0-uv.y);
-			pixel.rgb *= vec3(0.5, 1.0, 1.25);
-            if (uv.y < 0.01) {
-                pixel = vec4(1.0);
+        vec4 effect(vec4 color, Image texture, vec2 tc, vec2 screen_coords) {
+            vec2 pc = tc * size;
+            vec4 disp = Texel(displacement, tc);
+            vec2 offset = vec2(1.0/hs);
+            offset.x *= cos(4.0*time+pc.y/4.0)*disp.y*pc.y/80.0;
+            offset.y *= sin(2.0*time+pc.x/40.0+disp.x)*4.0;
+            vec4 pixel = Texel(texture, vec2(tc.x+offset.x, 1.0-tc.y+offset.y));
+			pixel.a *= 0.9*(1.0-tc.y);
+			pixel.rgb = mix(pixel.rgb, tint, 0.25);
+            if (pc.y < offset.y*size.y+4.0) {
+                discard;
+            } else if (pc.y < offset.y*size.y+8.0) {
+    			pixel.rgb *= 1.5;
+                if (pixel.a > 0.0) {
+                    pixel.a = 1.0;
+                }
             }
 			return pixel * color;
         }
 		#endif
     ]])
+    self.shader:send('displacement', love.graphics.newImage('displacement.png'))
+    self.shader:send('size', {self.w, self.h})
+    return self
 end
 
-function water.update(dt)
+function water:update(dt)
     if love.keyboard.isDown('up') then
-        water.y = water.y - 1
+        self.y = self.y - 1
     end
     if love.keyboard.isDown('left') then
-        water.x = water.x - 1
+        -- self.x = self.x - 1
     end
     if love.keyboard.isDown('down') then
-        water.y = water.y + 1
+        self.y = self.y + 1
     end
     if love.keyboard.isDown('right') then
-        water.x = water.x + 1
+        -- self.x = self.x + 1
     end
-	-- shader:send('surface', water.y);
-	shader:send('time', os.clock()*10);
+	self.shader:send('time', os.clock()*10);
 end
 
-function water.draw(drawWorld)
+function water:draw(drawWorld)
     -- draw reflection
-    reflection:clear()
-    love.graphics.setCanvas(reflection)
+    self.reflection:clear()
+    love.graphics.setCanvas(self.reflection)
     love.graphics.push()
-    love.graphics.translate(-water.x, -(water.y-water.h))
+    love.graphics.translate(-self.x, -(self.y-self.h))
     drawWorld()
     love.graphics.pop()
     love.graphics.setCanvas()
     -- render reflection
-    love.graphics.setShader(shader)
-    love.graphics.draw(reflection, water.x, water.y);
+    love.graphics.setShader(self.shader)
+    love.graphics.draw(self.reflection, self.x, self.y);
     love.graphics.setShader()
 end
 
