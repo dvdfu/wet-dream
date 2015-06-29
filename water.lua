@@ -1,14 +1,12 @@
 local water = {}
 
 function water.load()
-    water.level = 360
-    water.x, water.y = 0, water.level
-    water.w, water.h = 960, 360--love.graphics.getWidth(), love.graphics.getHeight()
-    water.t = 0
+    water.level = 400
+    water.x, water.y = 200, water.level
+    water.w, water.h = 400, 200--love.graphics.getWidth(), love.graphics.getHeight()
 
     reflection = love.graphics.newCanvas(water.w, water.h);
     shader = love.graphics.newShader([[
-		extern float surface;
 		extern float time;
 		varying vec2 hs;
 		varying float altitude;
@@ -16,12 +14,8 @@ function water.load()
 
 		#ifdef VERTEX
         vec4 position(mat4 transform_projection, vec4 vertex_position) {
+            hs = love_ScreenSize.xy/2.0;
 			vec4 pos = transform_projection * vertex_position;
-			hs = love_ScreenSize.xy/2.0;
-			vec4 s = (hs.y-surface)*2.0/hs.y*vec4(0.0, 1.0, 0.0, 1.0);
-			s = transform_projection * s;
-			altitude = (s.y-pos.y)*hs.y;
-			pos.y = s.y-pos.y;
             return pos;
         }
 		#endif
@@ -29,14 +23,11 @@ function water.load()
 		#ifdef PIXEL
         vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
 			vec2 uv = texture_coords;
-			vec2 offset = vec2(10.0*cos(10.0*time+150.0*uv.y)*uv.y, 0.0)*uv.y/hs;
-
-			vec4 pixel = Texel(texture, vec2(uv.x+offset.x, uv.y+offset.y));
-
-			pixel.a *= 0.75;//1.0-altitude/cutoff;
-			//pixel.rgb *= vec3(0.5, 1.0, 1.5);
-            pixel.rgb *= 0.75;
-            if (uv.y > 0.99) {
+            float offset = 4.0*cos(4.0*time+80.0*uv.y)*uv.y/hs.y;
+            vec4 pixel = Texel(texture, vec2(uv.x+offset, 1.0-uv.y));
+			pixel.a *= 0.9*(1.0-uv.y);
+			pixel.rgb *= vec3(0.5, 1.0, 1.25);
+            if (uv.y < 0.01) {
                 pixel = vec4(1.0);
             }
 			return pixel * color;
@@ -46,35 +37,35 @@ function water.load()
 end
 
 function water.update(dt)
-    -- water.t = water.t + dt
-    -- water.y = water.level + 5*math.sin(water.t)
     if love.keyboard.isDown('up') then
-        water.y = water.y - 0.5
+        water.y = water.y - 1
+    end
+    if love.keyboard.isDown('left') then
+        water.x = water.x - 1
     end
     if love.keyboard.isDown('down') then
-        water.y = water.y + 0.5
+        water.y = water.y + 1
     end
-	shader:send('surface', water.y);
+    if love.keyboard.isDown('right') then
+        water.x = water.x + 1
+    end
+	-- shader:send('surface', water.y);
 	shader:send('time', os.clock()*10);
 end
 
 function water.draw(drawWorld)
-    love.graphics.rectangle('fill', water.x, water.y, water.w, water.h)
     -- draw reflection
-    love.graphics.setCanvas(reflection)
     reflection:clear()
-    love.graphics.setStencil(stencil)
+    love.graphics.setCanvas(reflection)
+    love.graphics.push()
+    love.graphics.translate(-water.x, -(water.y-water.h))
     drawWorld()
-    love.graphics.setStencil()
+    love.graphics.pop()
     love.graphics.setCanvas()
     -- render reflection
     love.graphics.setShader(shader)
-    love.graphics.draw(reflection);
+    love.graphics.draw(reflection, water.x, water.y);
     love.graphics.setShader()
-end
-
-function stencil()
-    love.graphics.rectangle('fill', water.x, water.y-water.h, water.w, water.h)
 end
 
 return water

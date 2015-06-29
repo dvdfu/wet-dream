@@ -33,10 +33,14 @@ function drawWorld()
 	box.draw()
 end
 
-function love.draw()
+function drawAll()
 	drawWorld()
 	water.draw(drawWorld)
-	-- cam:draw(drawWorld)
+end
+
+function love.draw()
+	drawAll()
+	-- cam:draw(drawAll)
 	-- for i=1, 8 do
 	-- 	love.graphics.line(0, 100*i, love.graphics.getWidth(), 100*i)
 	-- end
