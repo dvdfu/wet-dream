@@ -32,9 +32,9 @@ function water.new(x,y,w,h)
 
             // displacement
             vec4 disp_pixel = Texel(displacement, tc);
-            vec2 offset = vec2(1.0/hs);
+            vec2 offset = vec2(1.0/size);
             offset.x *= 1.5*cos(2.0*time+pc.y/4.0)*disp_pixel.y;
-            offset.y *= 4.0*sin(1.0*time+pc.x/40.0+disp_pixel.x);
+            offset.y *= 2.0*sin(1.0*time+pc.x/40.0+disp_pixel.x);
             if (pc.y < offset.y*size.y+4.0) {
                 discard;
             }
@@ -46,13 +46,13 @@ function water.new(x,y,w,h)
             // reflection
             vec4 ref_pixel = Texel(reflection, vec2(tc.x+offset.x, 1.0-(tc.y+offset.y)));
             ref_pixel.a = max(1.0-tc.y*size.y/cutoff, 0.0);
-            if (pc.y < offset.y*size.y+8.0) {
+            if (pc.y < offset.y*size.y+6.0) {
                 out_pixel.rgb = tint;
             } else {
                 out_pixel.rgb = mix(out_pixel.rgb, ref_pixel.rgb, ref_pixel.a);
             }
 
-            return out_pixel * color;
+            return out_pixel * color * 0.9;
         }
 		#endif
     ]])

@@ -7,9 +7,9 @@ love.graphics.setBackgroundColor(100, 100, 100, 255)
 
 function love.load()
 	box.load()
-	water = Water.new(0, 400, 800, 200)
+	water = Water.new(0, 400, 800, 600)
 	water2 = Water.new(0, 200, 800, 200)
-	bg = love.graphics.newImage('bg.png')
+	bg = love.graphics.newImage('bg2.png')
 	cam = Camera:new()
 	cam:lookAt(box.x, box.y)
 end
@@ -30,14 +30,14 @@ end
 
 function drawWorld()
 	love.graphics.setColor(220, 255, 180)
-	love.graphics.draw(bg, 0, 0, 0, 2, 2)
+	love.graphics.draw(bg)
 	love.graphics.setColor(255, 255, 255)
 	box.draw()
 end
 
 function drawAll()
 	drawWorld()
-	water2:draw(drawWorld)
+	-- water2:draw(drawWorld)
 	water:draw(drawWorld)
 end
 
