@@ -13,6 +13,7 @@ function water.new(x,y,w,h)
 		extern float time;
         extern vec2 size;
 		varying vec2 hs;
+        uniform float cutoff = 200.0;
         uniform Image displacement;
         uniform vec3 tint = vec3(0.5, 0.7, 0.9);
 
@@ -30,9 +31,9 @@ function water.new(x,y,w,h)
             vec4 disp = Texel(displacement, tc);
             vec2 offset = vec2(1.0/hs);
             offset.x *= cos(4.0*time+pc.y/4.0)*disp.y*pc.y/80.0;
-            offset.y *= sin(2.0*time+pc.x/40.0+disp.x)*4.0;
+            offset.y *= sin(2.0*time+pc.x/40.0+disp.x)*2.0;
             vec4 pixel = Texel(texture, vec2(tc.x+offset.x, 1.0-tc.y+offset.y));
-			pixel.a *= 0.9*(1.0-tc.y);
+			pixel.a *= 0.9*(1.0-pc.y/cutoff);
 			pixel.rgb = mix(pixel.rgb, tint, 0.25);
             if (pc.y < offset.y*size.y+4.0) {
                 discard;
