@@ -37,7 +37,7 @@ end
 
 function drawAll()
 	drawWorld()
-	-- water2:draw(drawWorld)
+	water2:draw(drawWorld)
 	water:draw(drawWorld)
 end
 
