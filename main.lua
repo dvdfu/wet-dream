@@ -27,7 +27,9 @@ function love.update(dt)
 end
 
 function drawWorld()
+	love.graphics.setColor(220, 255, 180)
 	love.graphics.draw(bg, 0, 0, 0, 2, 2)
+	love.graphics.setColor(255, 255, 255)
 	box.draw()
 end
 
