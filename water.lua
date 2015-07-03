@@ -32,27 +32,28 @@ function water.new(x,y,w,h)
 
             // displacement
             vec4 disp_pixel = Texel(displacement, tc);
-            vec2 offset = vec2(1.0/size);
-            offset.x *= 1.5*cos(2.0*time+pc.y/4.0)*disp_pixel.y;
-            offset.y *= 2.0*sin(1.0*time+pc.x/40.0+disp_pixel.x);
+            vec2 offset = vec2(2.0/size);
+            offset.x *= cos(2.0*time+pc.y/4.0)*disp_pixel.y;
+            offset.y *= sin(1.0*time+pc.x/40.0+disp_pixel.x);
             if (pc.y < offset.y*size.y+4.0) {
                 discard;
             }
 
             // diffraction
             vec4 out_pixel = Texel(texture, tc+offset);
-            out_pixel.rgb *= tint;
+            out_pixel.a = 1.0;
 
             // reflection
             vec4 ref_pixel = Texel(reflection, vec2(tc.x+offset.x, 1.0-(tc.y+offset.y)));
             ref_pixel.a = max(1.0-tc.y*size.y/cutoff, 0.0);
+            ref_pixel.rgb = mix(ref_pixel.rgb, tint, 0.5);
             if (pc.y < offset.y*size.y+6.0) {
                 out_pixel.rgb = tint;
             } else {
-                out_pixel.rgb = mix(out_pixel.rgb, ref_pixel.rgb, ref_pixel.a);
+                out_pixel.rgb = mix(out_pixel.rgb*0.8, ref_pixel.rgb, ref_pixel.a*0.6);
             }
 
-            return out_pixel * color * 0.9;
+            return out_pixel * color;
         }
 		#endif
     ]])
@@ -78,26 +79,20 @@ function water:update(dt)
 end
 
 function water:draw(drawWorld)
-    -- draw reflection
-    self.reflection:clear()
-    love.graphics.setCanvas(self.reflection)
-    love.graphics.push()
-    love.graphics.translate(-self.x, -(self.y-self.h))
-    drawWorld()
-    love.graphics.pop()
-    love.graphics.setCanvas()
+    function render(canvas, x, y)
+        canvas:clear()
+        love.graphics.setCanvas(canvas)
+        love.graphics.push()
+        love.graphics.origin()
+        love.graphics.translate(-x, -y)
+        drawWorld()
+        love.graphics.pop()
+        love.graphics.setCanvas()
+    end
+    render(self.diffraction, self.x, self.y)
+    render(self.reflection, self.x, self.y-self.h)
     self.shader:send('reflection', self.reflection)
 
-    -- draw diffraction
-    self.diffraction:clear()
-    love.graphics.setCanvas(self.diffraction)
-    love.graphics.push()
-    love.graphics.translate(-self.x, -self.y)
-    drawWorld()
-    love.graphics.pop()
-    love.graphics.setCanvas()
-
-    -- render reflection
     love.graphics.setShader(self.shader)
     love.graphics.draw(self.diffraction, self.x, self.y);
     love.graphics.setShader()
