@@ -6,8 +6,8 @@ love.graphics.setDefaultFilter('nearest', 'nearest')
 
 function love.load()
 	box.load()
-	water = Water.new(0, 400, love.graphics.getWidth(), 80)
-	bg = love.graphics.newImage('bg2.png')
+	water = Water.new(0, 300, love.graphics.getWidth(), 200)
+	bg = love.graphics.newImage('bg3.png')
 	cam = Camera:new()
 	cam:lookAt(box.x, box.y)
 	-- cam:zoom(0.5)
@@ -39,6 +39,7 @@ end
 function drawAll()
 	drawWorld()
 	water:draw(drawWorld)
+	-- water:draw(drawWorld, drawWorld)
 end
 
 function love.draw()

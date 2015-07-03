@@ -8,23 +8,23 @@ function water.new(x,y,w,h)
     self.w, self.h = w, h
     self.diffraction = love.graphics.newCanvas(self.w, self.h)
     self.reflection = love.graphics.newCanvas(self.w, self.h)
-    self.shader = love.graphics.newShader([[
-		extern float time;
+    self.waterShader = love.graphics.newShader([[
+        extern float time;
         extern float cutoff = 64.0;
         extern vec2 turbulence = vec2(1.0);
         extern vec2 size;
         extern vec4 tint = vec4(0.5, 0.7, 0.9, 0.2);
         extern Image reflection;
-		varying vec2 hs;
+        varying vec2 hs;
 
-		#ifdef VERTEX
+        #ifdef VERTEX
         vec4 position(mat4 transform_projection, vec4 vertex_position) {
             hs = love_ScreenSize.xy/2.0;
-			return transform_projection * vertex_position;
+            return transform_projection * vertex_position;
         }
-		#endif
+        #endif
 
-		#ifdef PIXEL
+        #ifdef PIXEL
         float rand(vec2 co) {
             return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
         }
@@ -55,17 +55,26 @@ function water.new(x,y,w,h)
 
             return out_pixel * color;
         }
-		#endif
+        #endif
     ]])
-    self.shader:send('size', {self.w, self.h})
+    self.waterShader:send('size', {self.w, self.h})
+    self.stencilShader = love.graphics.newShader([[
+        vec4 effect(vec4 color, Image texture, vec2 tc, vec2 screen_coords) {
+            float alpha = Texel(texture, tc).a;
+            if (alpha == 0.0) {
+                discard;
+            }
+            return vec4(vec3(1.0), alpha);
+        }
+    ]])
     return self
 end
 
 function water:update(dt)
-	self.shader:send('time', os.clock())
+    self.waterShader:send('time', os.clock())
 end
 
-function water:draw(drawWorld)
+function water:draw(drawWorld, stencil)
     function render(canvas, x, y)
         canvas:clear()
         love.graphics.setCanvas(canvas)
@@ -78,11 +87,14 @@ function water:draw(drawWorld)
     end
     render(self.diffraction, self.x, self.y)
     render(self.reflection, self.x, self.y-self.h)
-    self.shader:send('reflection', self.reflection)
+    self.waterShader:send('reflection', self.reflection)
 
-    love.graphics.setShader(self.shader)
+    love.graphics.setShader(self.stencilShader)
+    love.graphics.setInvertedStencil(stencil)
+    love.graphics.setShader(self.waterShader)
     love.graphics.draw(self.diffraction, self.x, self.y);
     love.graphics.setShader()
+    love.graphics.setStencil()
 end
 
 function water:setFilter(filter)
@@ -91,15 +103,15 @@ function water:setFilter(filter)
 end
 
 function water:setTurbulence(x, y)
-    self.shader:send('turbulence', {x, y})
+    self.waterShader:send('turbulence', {x, y})
 end
 
 function water:setTint(r, g, b, a)
-    self.shader:send('tint', {r, g, b, a})
+    self.waterShader:send('tint', {r, g, b, a})
 end
 
 function water:setCutoff(cutoff)
-    self.shader:send('cutoff', cutoff)
+    self.waterShader:send('cutoff', cutoff)
 end
 
 return water
