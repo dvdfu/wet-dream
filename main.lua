@@ -6,10 +6,13 @@ love.graphics.setDefaultFilter('nearest', 'nearest')
 
 function love.load()
 	box.load()
-	water = Water.new(0, 400, love.graphics.getWidth(), love.graphics.getHeight())
+	water = Water.new(0, 400, love.graphics.getWidth(), 80)
 	bg = love.graphics.newImage('bg2.png')
 	cam = Camera:new()
 	cam:lookAt(box.x, box.y)
+	-- cam:zoom(0.5)
+    -- water:setFilter('linear')
+	water:setTurbulence(1, 1)
 end
 
 function love.update(dt)
@@ -21,7 +24,11 @@ function love.update(dt)
 	local cx, cy = cam:pos()
     local dx, dy = box.x+32 - cx, box.y-32 - cy
     dx, dy = dx/20, dy/20
-    cam:move(dx, dy)
+	if math.abs(dx) > 0.01 or math.abs(dy) > 0.01 then
+	    cam:move(dx, dy)
+	else
+		cam:lookAt(box.x+32, box.y-32)
+	end
 end
 
 function drawWorld()
